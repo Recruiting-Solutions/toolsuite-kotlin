@@ -5,7 +5,7 @@
  */
 
 plugins {
-    `java-library`
+    kotlin("jvm") version "1.9.10"
     application
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
@@ -25,7 +25,12 @@ dependencies {
 group = "in.toolsuite"
 version = "0.0.1-SNAPSHOT"
 description = "Toolsuite"
-java.sourceCompatibility = JavaVersion.VERSION_13
+
+kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(13))
+    }
+}
 
 application {
     mainClass.set("core.App")
