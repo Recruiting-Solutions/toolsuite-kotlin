@@ -1,17 +1,11 @@
 package widgets.table
 
-import java.awt.Component
 import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.Rectangle
-
 import javax.swing.JComponent
 import javax.swing.UIManager
 import javax.swing.plaf.basic.BasicTableHeaderUI
-import javax.swing.table.TableCellRenderer
-import javax.swing.table.TableColumn
-import javax.swing.table.TableColumnModel
-import kotlin.math.min
 
 class GroupableTableHeaderUI : BasicTableHeaderUI() {
 
