@@ -10,10 +10,16 @@ class ColumnGroup(val headerValue: String?, var headerRenderer: TableCellRendere
     private val columns = mutableListOf<TableColumn>()
     private val groups = mutableListOf<ColumnGroup>()
 
-    private var margin = 0
+    var columnMargin = 0
+        set(value) {
+            field = value
+            for (columnGroup in groups) {
+                columnGroup.columnMargin = value
+            }
+        }
 
     fun add(column: TableColumn) {
-        columns.add(column);
+        columns.add(column)
     }
 
     fun add(group: ColumnGroup) {
@@ -64,15 +70,8 @@ class ColumnGroup(val headerValue: String?, var headerRenderer: TableCellRendere
         }
         for (tableColumn in columns) {
             width += tableColumn.width
-            width += margin
+            width += columnMargin
         }
         return Dimension(width, height)
-    }
-
-    fun setColumnMargin(margin: Int) {
-        this.margin = margin
-        for (columnGroup in groups) {
-            columnGroup.setColumnMargin(margin)
-        }
     }
 }
