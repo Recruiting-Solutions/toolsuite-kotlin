@@ -4,9 +4,7 @@ import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.Image
 import java.awt.RenderingHints
-import java.util.Timer
-import java.util.TimerTask
-
+import java.util.*
 import javax.swing.JComponent
 
 // degrees per second
@@ -15,7 +13,7 @@ private const val rotationRate = 360.0f;
 // 1 divided by frames per second
 private const val deltaTime = 1.0f / 30.0f;
 
-class Throbber(private val image: Image, private val width: Int, private val height: Int, private val paddingX: Int, private val paddingY: Int) : JComponent() {
+class Throbber(private val image: Image, private val width: Int, private val height: Int, paddingX: Int, paddingY: Int) : JComponent() {
 
     companion object {
         private const val serialVersionUID = 1L
