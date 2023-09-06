@@ -1,37 +1,5 @@
 package widgets
 
-import java.awt.BorderLayout
-import java.awt.Color
-import java.awt.Component
-import java.awt.Dimension
-import java.awt.FlowLayout
-import java.awt.GridLayout
-import java.io.File
-import java.util.ArrayList
-
-import javax.swing.Action
-import javax.swing.JButton
-import javax.swing.JCheckBox
-import javax.swing.JFileChooser
-import javax.swing.JLabel
-import javax.swing.JList
-import javax.swing.JOptionPane
-import javax.swing.JComboBox
-import javax.swing.JPanel
-import javax.swing.JScrollPane
-import javax.swing.JSplitPane
-import javax.swing.JTable
-import javax.swing.ListSelectionModel
-import javax.swing.border.CompoundBorder
-import javax.swing.border.EmptyBorder
-import javax.swing.filechooser.FileFilter
-import javax.swing.filechooser.FileNameExtensionFilter
-import javax.swing.table.DefaultTableModel
-import javax.swing.table.JTableHeader
-import javax.swing.table.TableCellRenderer
-import javax.swing.table.TableColumn
-import javax.swing.table.TableColumnModel
-
 import core.App
 import core.TranslationMgr
 import core.TranslationMgrFlags
@@ -39,12 +7,18 @@ import core.TranslationMgrFlags.FolderNaming.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import structs.LanguageIdentifier
 import structs.LanguageTable
 import widgets.table.ColumnGroup
 import widgets.table.GroupableTableHeader
+import java.awt.*
+import java.io.File
+import javax.swing.*
+import javax.swing.border.CompoundBorder
+import javax.swing.border.EmptyBorder
+import javax.swing.filechooser.FileNameExtensionFilter
+import javax.swing.table.DefaultTableModel
+import javax.swing.table.JTableHeader
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.coroutineContext
 
 class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
 
@@ -415,7 +389,7 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
         return translationMgr.export2Json(outputFolder, fileName)
     }
 
-    fun updateTableAutoResizing() {
+    private fun updateTableAutoResizing() {
         if (checkBoxAutoResize.isSelected) {
             for (column in 0..<table.columnCount) {
                 val tableColumn = table.columnModel.getColumn(column)
