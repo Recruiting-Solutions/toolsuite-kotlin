@@ -83,18 +83,29 @@ class App : JFrame() {
         }
     }
 
-    private val layout = BorderLayout()
+    private val layout = BorderLayout().also { contentPane.layout = it }
 
-    private val prefs = Preferences.userRoot().node(App::class.java.getSimpleName() + "-" + "MyExcelibur")
-    private val statusBar = JLabel()
-    private val colorLabel = JPanel(BorderLayout())
+    val prefs = Preferences.userRoot().node(App::class.java.getSimpleName() + "-" + "MyExcelibur")
 
-    private var useDarkMode = false
     private val throbber by lazy {
         val ico = ImageIcon(loadResource("icon_loading_circle.png"))
         Throbber(ico.image, 20, 20, 2, 2)
     }
 
+    private val statusBar = JLabel().also {
+        it.setBorder(CompoundBorder(it.border, EmptyBorder(4, 8, 4, 8)))
+        it.setBackground(Color(31, 144, 255, 255))
+        it.setForeground(Color.WHITE)
+        it.setOpaque(true)
+    }
+    private val colorLabel = JPanel(BorderLayout()).apply {
+        setBackground(Color.RED)
+        setOpaque(true)
+        preferredSize = Dimension(24, 24)
+        add(throbber, BorderLayout.CENTER)
+    }
+
+    private var useDarkMode = false
     private val itemDark = JCheckBoxMenuItem("Dark Theme").apply {
         addActionListener { setThemeDark() }
     }
@@ -107,27 +118,14 @@ class App : JFrame() {
         setDefaultCloseOperation(EXIT_ON_CLOSE)
         createMenuBar()
         registerFrame(100, 100, 800, 600, MAXIMIZED_BOTH)
-        contentPane.setLayout(layout)
 
         ToolTipManager.sharedInstance().initialDelay = 100
         ToolTipManager.sharedInstance().dismissDelay = 10000
 
-        val b = CompoundBorder(statusBar.border, EmptyBorder(4, 8, 4, 8))
-        statusBar.setBorder(b)
-
         val panel = JPanel()
         panel.setLayout(BorderLayout())
-
         panel.add(colorLabel, BorderLayout.WEST)
         panel.add(statusBar, BorderLayout.CENTER)
-        statusBar.setBackground(Color(31, 144, 255, 255))
-        statusBar.setForeground(Color.WHITE)
-        statusBar.setOpaque(true)
-        colorLabel.setOpaque(true)
-        colorLabel.setBackground(Color.RED)
-        colorLabel.preferredSize = Dimension(24, 24)
-
-        colorLabel.add(throbber, BorderLayout.CENTER)
 
         addScreen(MainMenu(this), TOOL_NAME)
         contentPane.add(panel, BorderLayout.SOUTH)

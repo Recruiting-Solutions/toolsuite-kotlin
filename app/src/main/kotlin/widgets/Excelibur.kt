@@ -46,8 +46,16 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
         addActionListener { updateTableView() }
     }
 
-    private var lastImportFolder = ""
-    private var lastExportFolder = ""
+    private var lastImportFolder = App.get().prefs.get("lastImportFolder", "")
+        set(value) {
+            field = value;
+            App.get().prefs.put("lastImportFolder", value)
+        }
+    private var lastExportFolder = App.get().prefs.get("lastExportFolder", "")
+        set(value) {
+            field = value;
+            App.get().prefs.put("lastExportFolder", value)
+        }
 
     private val checkBoxAutoResize = JCheckBox("Auto Resize Table").apply {
         setSelected(true)
@@ -67,7 +75,19 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
         setToolTipText("Don't export key value pairs with empty values. This is for each language individually")
     }
 
-    private val comboFolderNaming: JComboBox<String> = createOutputFolderComboBox()
+    private val comboFolderNaming: JComboBox<String> = createOutputFolderComboBox().also { comboBox ->
+        App.get().prefs.get("folderNaming", null)?.let {
+            for (i in 0..<comboBox.itemCount) {
+                val item = comboBox.getItemAt(i)
+                if (item == it) {
+                    comboBox.selectedIndex = i
+                }
+            }
+        }
+        comboBox.addItemListener {
+            App.get().prefs.put("folderNaming", it.item.toString())
+        }
+    }
 
     private val horSplit = JSplitPane().apply {
         setOrientation(JSplitPane.HORIZONTAL_SPLIT)
