@@ -245,7 +245,7 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
                 JFileChooser.APPROVE_OPTION -> {
                     if (selectedFiles.isNotEmpty()) {
                         translationMgr.files = selectedFiles
-                        lastImportFolder = translationMgr.files[0].getParent()
+                        lastImportFolder = selectedFiles[0].getParent()
                         updateListView()
                         updateTableView()
                     }
@@ -308,9 +308,9 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
         fileList.setVisibleRowCount(-1)
         fileList.selectionMode = ListSelectionModel.SINGLE_SELECTION
 
-        val fileNames = Array<String>(translationMgr.getNumSelectedFiles()) {
-            val file = translationMgr.files[it]
-            translationMgr.getFileName(file.getName())
+        val fileNames = Array(translationMgr.getNumSelectedFiles()) {
+            val file = translationMgr.files?.get(it)
+            file?.let { translationMgr.getFileName(file.getName()) }
         }
         fileList.setListData(fileNames)
         fileList.setSelectedIndex(0)
@@ -331,7 +331,7 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
         }
     }
 
-    private fun importData() {
+    private suspend fun importData() {
         translationMgr.setFlag(TranslationMgrFlags.Import.USE_HYPERLINK_IF_AVAILABLE, checkBoxUseHyperlinkIfAvailable.isSelected)
         val languageTable = translationMgr.importExcelFiles()
         val comp = horSplit.rightComponent
@@ -381,7 +381,7 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
         comboFolderNaming.setEnabled(bEnabled)
     }
 
-    private fun exportData(outputFolder: String, fileName: String): Boolean {
+    private suspend fun exportData(outputFolder: String, fileName: String): Boolean {
         translationMgr.setFlag(TranslationMgrFlags.Export.CONCAT_COMPONENT_AND_KEY, checkBoxMergeCompAndKey.isSelected)
         translationMgr.setFlag(TranslationMgrFlags.Export.DONT_EXPORT_EMPTY_VALUES, checkDoNotExportEmptyCells.isSelected)
 
