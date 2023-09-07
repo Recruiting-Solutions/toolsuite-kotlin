@@ -2,7 +2,6 @@ package structs
 
 class LanguageRowMap {
 
-    @JvmField
     var rowMap: Array<Array<String>> = emptyArray()
     private val tree: MutableMap<String, MutableSet<String>> = mutableMapOf()
 

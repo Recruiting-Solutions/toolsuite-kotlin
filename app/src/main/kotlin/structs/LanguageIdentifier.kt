@@ -1,3 +1,3 @@
 package structs
 
-data class LanguageIdentifier(@JvmField val brand: String, @JvmField val locale: String)
+data class LanguageIdentifier(val brand: String, val locale: String)

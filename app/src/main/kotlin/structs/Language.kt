@@ -1,6 +1,6 @@
 package structs
 
-class Language(@JvmField val identifier: LanguageIdentifier) {
+class Language(val identifier: LanguageIdentifier) {
 
     private val _tree: MutableMap<String, MutableMap<String, String>> = mutableMapOf();
     val tree: Map<String, Map<String, String>>
@@ -15,7 +15,7 @@ class Language(@JvmField val identifier: LanguageIdentifier) {
         val keyMap = _tree[component] ?: mutableMapOf<String, String>().also { _tree[component] = it; }
         if (keyMap.containsKey(key)) return
         keyMap[key] = value
-}
+    }
 
     fun findValue(component: String, key: String): String {
         val componentMap = tree[component] ?: return ""
