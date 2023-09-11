@@ -1,7 +1,6 @@
 package core
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.io.File
 import java.io.FileInputStream
 import java.io.Writer
@@ -147,18 +146,24 @@ class TranslationMgr {
         // the success message if succeeding exports were successfull.
         val bMergeComponentAndKey = getFlag(TranslationMgrFlags.Export.CONCAT_COMPONENT_AND_KEY)
         val bSkipEmptyCells = getFlag(TranslationMgrFlags.Export.DONT_EXPORT_EMPTY_VALUES)
-        languageTable?.identifiers?.forEach { identifier ->
-            if (bMergeComponentAndKey) {
-                if (!exportSimple(outputFolder, fileName, identifier, bSkipEmptyCells)) {
-                    return false
-                }
-            } else {
-                if (!exportAdvanced(outputFolder, fileName, identifier, bSkipEmptyCells)) {
-                    return false
+        val allSucceeded = coroutineScope {
+            val jobs = languageTable?.identifiers?.map { identifier ->
+                async {
+                    if (bMergeComponentAndKey) {
+                        if (!exportSimple(outputFolder, fileName, identifier, bSkipEmptyCells)) {
+                            return@async false
+                        }
+                    } else {
+                        if (!exportAdvanced(outputFolder, fileName, identifier, bSkipEmptyCells)) {
+                            return@async false
+                        }
+                    }
+                    return@async true
                 }
             }
+            jobs?.awaitAll()?.contains(false)?.not() ?: true
         }
-        return true
+        return allSucceeded
     }
 
     private suspend fun exportAdvanced(outputFolder: String, fileName: String, identifier: LanguageIdentifier, skipEmptyCells: Boolean): Boolean = withContext(Dispatchers.IO) {
@@ -199,7 +204,7 @@ class TranslationMgr {
                 writer.write("\n\t}\n}")
             }
         } catch (e: IOException) {
-            App.get().setStatus(e.localizedMessage, App.ERROR_MESSAGE)
+            withContext(Dispatchers.Main) { App.get().setStatus(e.localizedMessage, App.ERROR_MESSAGE) }
             return@withContext false
         }
         return@withContext true
@@ -229,7 +234,7 @@ class TranslationMgr {
                 writer.write("\n}")
             }
         } catch (e: IOException) {
-            App.get().setStatus(e.localizedMessage, App.ERROR_MESSAGE)
+            withContext(Dispatchers.Main) { App.get().setStatus(e.localizedMessage, App.ERROR_MESSAGE) }
             return@withContext false
         }
         return@withContext true
