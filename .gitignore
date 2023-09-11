@@ -5,3 +5,5 @@ app/bin
 .project
 .settings
 .classpath
+local.properties
+.idea
