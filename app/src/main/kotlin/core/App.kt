@@ -1,5 +1,9 @@
 package core
 
+import com.formdev.flatlaf.FlatDarkLaf
+import com.formdev.flatlaf.FlatLightLaf
+import widgets.MainMenu
+import widgets.Throbber
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -25,12 +29,6 @@ import javax.swing.UIManager
 import javax.swing.UnsupportedLookAndFeelException
 import javax.swing.border.CompoundBorder
 import javax.swing.border.EmptyBorder
-
-import com.formdev.flatlaf.FlatDarkLaf
-import com.formdev.flatlaf.FlatLightLaf
-
-import widgets.MainMenu
-import widgets.Throbber
 import kotlin.concurrent.thread
 
 class App : JFrame() {
@@ -69,11 +67,11 @@ class App : JFrame() {
         fun createButtonWithTextAndIcon(text: String, iconPath: String): JButton {
             val url = loadResource(iconPath)
             return JButton(text, url?.let { ImageIcon(it) }).apply {
-                setBackground(Color(31, 144, 255))
-                setForeground(Color.WHITE)
+                background = Color(31, 144, 255)
+                foreground = Color.WHITE
                 preferredSize = Dimension(200, 32)
-                setHorizontalAlignment(JButton.LEFT)
-                setIconTextGap(24)
+                horizontalAlignment = JButton.LEFT
+                iconTextGap = 24
             }
         }
 
@@ -85,7 +83,7 @@ class App : JFrame() {
 
     private val layout = BorderLayout().also { contentPane.layout = it }
 
-    val prefs = Preferences.userRoot().node(App::class.java.getSimpleName() + "-" + "MyExcelibur")
+    val prefs: Preferences = Preferences.userRoot().node(App::class.java.simpleName + "-" + "MyExcelibur")
 
     private val throbber by lazy {
         val ico = ImageIcon(loadResource("icon_loading_circle.png"))
@@ -93,14 +91,14 @@ class App : JFrame() {
     }
 
     private val statusBar = JLabel().also {
-        it.setBorder(CompoundBorder(it.border, EmptyBorder(4, 8, 4, 8)))
-        it.setBackground(Color(31, 144, 255, 255))
-        it.setForeground(Color.WHITE)
-        it.setOpaque(true)
+        it.border = CompoundBorder(it.border, EmptyBorder(4, 8, 4, 8))
+        it.background = Color(31, 144, 255, 255)
+        it.foreground = Color.WHITE
+        it.isOpaque = true
     }
     private val colorLabel = JPanel(BorderLayout()).apply {
-        setBackground(Color.RED)
-        setOpaque(true)
+        background = Color.RED
+        isOpaque = true
         preferredSize = Dimension(24, 24)
         add(throbber, BorderLayout.CENTER)
     }
@@ -115,7 +113,7 @@ class App : JFrame() {
     }
 
     init {
-        setDefaultCloseOperation(EXIT_ON_CLOSE)
+        defaultCloseOperation = EXIT_ON_CLOSE
         createMenuBar()
         registerFrame(100, 100, 800, 600, MAXIMIZED_BOTH)
 
@@ -123,7 +121,7 @@ class App : JFrame() {
         ToolTipManager.sharedInstance().dismissDelay = 10000
 
         val panel = JPanel()
-        panel.setLayout(BorderLayout())
+        panel.layout = BorderLayout()
         panel.add(colorLabel, BorderLayout.WEST)
         panel.add(statusBar, BorderLayout.CENTER)
 
@@ -163,8 +161,8 @@ class App : JFrame() {
     }
 
     private fun setThemeDark() {
-        itemDark.setSelected(true)
-        itemLight.setSelected(false)
+        itemDark.isSelected = true
+        itemLight.isSelected = false
         useDarkMode = true
         try {
             UIManager.setLookAndFeel(FlatDarkLaf())
@@ -175,8 +173,8 @@ class App : JFrame() {
     }
 
     private fun setThemeLight() {
-        itemDark.setSelected(false)
-        itemLight.setSelected(true)
+        itemDark.isSelected = false
+        itemLight.isSelected = true
         useDarkMode = false
         try {
             UIManager.setLookAndFeel(FlatLightLaf())
@@ -203,14 +201,14 @@ class App : JFrame() {
 
         val mainPanel = JPanel(BorderLayout())
         val infoText = JLabel()
-        infoText.setText(message)
+        infoText.text = message
         val b = CompoundBorder(infoText.border, EmptyBorder(8, 0, 24, 0))
-        infoText.setBorder(b)
+        infoText.border = b
         mainPanel.add(infoText, BorderLayout.NORTH)
 
         val grid = JPanel(GridLayout(3, 4, 1, 1))
-        grid.setOpaque(true)
-        grid.setBackground(Color.RED)
+        grid.isOpaque = true
+        grid.background = Color.RED
 
         val colorHeader = Color(230, 230, 230)
         val colorHeaderText = Color.BLACK
@@ -218,9 +216,9 @@ class App : JFrame() {
         val headers = arrayOf("component", "key", "de_DE", "en_US")
         for (cell in headers) {
             val label = JLabel(cell)
-            label.setOpaque(true)
-            label.setBackground(colorHeader)
-            label.setForeground(colorHeaderText)
+            label.isOpaque = true
+            label.background = colorHeader
+            label.foreground = colorHeaderText
             grid.add(label)
         }
 
@@ -229,9 +227,9 @@ class App : JFrame() {
         val cells = arrayOf("job_dialog", "loading_heading", "Beispieltext 1", "Exampletext 2", "job_dialog", "loading_title", "Beispieltext 1", "Exampletext 2")
         for (cell in cells) {
             val label = JLabel(cell)
-            label.setOpaque(true)
-            label.setBackground(colorCell)
-            label.setForeground(colorHeaderText)
+            label.isOpaque = true
+            label.background = colorCell
+            label.foreground = colorHeaderText
             grid.add(label)
         }
 
@@ -257,8 +255,8 @@ class App : JFrame() {
         var maxW = 0
         var maxH = 0
         for (monitor in env.screenDevices) {
-            maxW += monitor.getDisplayMode().width
-            if (monitor.getDisplayMode().height > maxH) maxH = monitor.getDisplayMode().height
+            maxW += monitor.displayMode.width
+            if (monitor.displayMode.height > maxH) maxH = monitor.displayMode.height
         }
 
         val w = prefs.getInt("W", defaultW).coerceAtLeast(500).coerceAtMost(maxW)
@@ -284,11 +282,11 @@ class App : JFrame() {
     }
 
     fun setStatus(message: String, type: Int) {
-        statusBar.setText(message)
+        statusBar.text = message
         when (type) {
-            WARNING_MESSAGE -> colorLabel.setBackground(Color(178, 139, 35))
-            ERROR_MESSAGE -> colorLabel.setBackground(Color(255, 110, 110))
-            else -> colorLabel.setBackground(Color(65, 125, 88))
+            WARNING_MESSAGE -> colorLabel.background = Color(178, 139, 35)
+            ERROR_MESSAGE -> colorLabel.background = Color(255, 110, 110)
+            else -> colorLabel.background = Color(65, 125, 88)
         }
     }
 }

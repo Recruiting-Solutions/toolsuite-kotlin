@@ -4,14 +4,15 @@ import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.Image
 import java.awt.RenderingHints
-import java.util.*
+import java.util.Timer
+import java.util.TimerTask
 import javax.swing.JComponent
 
 // degrees per second
-private const val rotationRate = 360.0f;
+private const val rotationRate = 360.0f
 
 // 1 divided by frames per second
-private const val deltaTime = 1.0f / 30.0f;
+private const val deltaTime = 1.0f / 30.0f
 
 class Throbber(private val image: Image, private val width: Int, private val height: Int, paddingX: Int, paddingY: Int) : JComponent() {
 
@@ -24,9 +25,9 @@ class Throbber(private val image: Image, private val width: Int, private val hei
     private val offsetX = paddingX
     private val offsetY = paddingY
 
-    private var angle = 0.0;
-    private var isRunning = false;
-    private var timer: Timer? = null;
+    private var angle = 0.0
+    private var isRunning = false
+    private var timer: Timer? = null
 
     fun startAnimation() {
         timer = Timer().also {
@@ -56,8 +57,8 @@ class Throbber(private val image: Image, private val width: Int, private val hei
     }
 
     private fun updateRotation() {
-        angle += rotationRate * deltaTime;
-        if (angle > 360.0f) angle -= 360.0f;
-        repaint();
+        angle += rotationRate * deltaTime
+        if (angle > 360.0f) angle -= 360.0f
+        repaint()
     }
 }

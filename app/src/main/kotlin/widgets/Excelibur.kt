@@ -3,16 +3,33 @@ package widgets
 import core.App
 import core.TranslationMgr
 import core.TranslationMgrFlags
-import core.TranslationMgrFlags.FolderNaming.*
+import core.TranslationMgrFlags.FolderNaming.BRAND_AND_LOCALE_AS_SUBFOLDER
+import core.TranslationMgrFlags.FolderNaming.BRAND_LOCALE
+import core.TranslationMgrFlags.FolderNaming.LOCALE_BRAND
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import structs.LanguageTable
 import widgets.table.ColumnGroup
 import widgets.table.GroupableTableHeader
-import java.awt.*
+import java.awt.BorderLayout
+import java.awt.Color
+import java.awt.Dimension
+import java.awt.FlowLayout
+import java.awt.GridLayout
 import java.io.File
-import javax.swing.*
+import javax.swing.JButton
+import javax.swing.JCheckBox
+import javax.swing.JComboBox
+import javax.swing.JFileChooser
+import javax.swing.JLabel
+import javax.swing.JList
+import javax.swing.JOptionPane
+import javax.swing.JPanel
+import javax.swing.JScrollPane
+import javax.swing.JSplitPane
+import javax.swing.JTable
+import javax.swing.ListSelectionModel
 import javax.swing.border.CompoundBorder
 import javax.swing.border.EmptyBorder
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -27,52 +44,52 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
     }
 
     private val translationMgr = TranslationMgr()
-    private var table = JTable(DefaultTableModel(arrayOf("Component", "Key", "Locale"), 0)).apply { setFillsViewportHeight(true) }
-    private val fileList = JList<String>();
+    private var table = JTable(DefaultTableModel(arrayOf("Component", "Key", "Locale"), 0)).apply { fillsViewportHeight = true }
+    private val fileList = JList<String>()
 
     private val importButton: JButton = App.createButtonWithTextAndIcon("Choose Excel files...", "icon_import.png").apply {
-        setToolTipText("Import files via a selection dialog. If any new file is imported the current selection of files will be removed and the table content is refreshed.");
+        toolTipText = "Import files via a selection dialog. If any new file is imported the current selection of files will be removed and the table content is refreshed."
         addActionListener { openInputDialog() }
     }
     private val exportButton: JButton = App.createButtonWithTextAndIcon("Export", "icon_export.png").apply {
-        setToolTipText("Bulk export every language to a .json. The locale is appended to the filename so 'translation' changes to 'translation_de_DE' etc.")
+        toolTipText = "Bulk export every language to a .json. The locale is appended to the filename so 'translation' changes to 'translation_de_DE' etc."
         addActionListener { openOutputDialog() }
     }
     private val returnButton = App.createButtonWithTextAndIcon("Back", "icon_return.png").apply {
         addActionListener { owner.addScreen(MainMenu(owner), App.TOOL_NAME) }
     }
     private val reloadButton: JButton = App.createButtonWithTextAndIcon("Reload tables...", "icon_refresh.png").apply {
-        setToolTipText("Reimport the selected files. Be sure to have all imported Excel files closed or they won't be imported as Excel blocks the files when opened.")
+        toolTipText = "Reimport the selected files. Be sure to have all imported Excel files closed or they won't be imported as Excel blocks the files when opened."
         addActionListener { updateTableView() }
     }
 
     private var lastImportFolder = App.get().prefs.get("lastImportFolder", "")
         set(value) {
-            field = value;
+            field = value
             App.get().prefs.put("lastImportFolder", value)
         }
     private var lastExportFolder = App.get().prefs.get("lastExportFolder", "")
         set(value) {
-            field = value;
+            field = value
             App.get().prefs.put("lastExportFolder", value)
         }
 
     private val checkBoxAutoResize = JCheckBox("Auto Resize Table").apply {
-        setSelected(true)
+        isSelected = true
         addItemListener { updateTableAutoResizing() }
-        setToolTipText("Change how the data is displayed in the table. Either fit to the window's size (enabled) or match each column's width to it's content (disabled)")
+        toolTipText = "Change how the data is displayed in the table. Either fit to the window's size (enabled) or match each column's width to it's content (disabled)"
     }
     private val checkBoxMergeCompAndKey = JCheckBox("Concat. 'Component' and 'Key'").apply {
-        setSelected(false)
-        setToolTipText("Concatenates component and key. That means 'dialog' and 'heading' become 'dialog_heading'.\nThis eventually reduces the json tree depth by 1")
+        isSelected = false
+        toolTipText = "Concatenates component and key. That means 'dialog' and 'heading' become 'dialog_heading'.\nThis eventually reduces the json tree depth by 1"
     }
     private val checkBoxUseHyperlinkIfAvailable = JCheckBox("Get hyperlink").apply {
-        setSelected(false)
-        setToolTipText("Replaces cell content with hyperlink if any")
+        isSelected = false
+        toolTipText = "Replaces cell content with hyperlink if any"
     }
     private val checkDoNotExportEmptyCells = JCheckBox("Skip empty values").apply {
-        setSelected(true)
-        setToolTipText("Don't export key value pairs with empty values. This is for each language individually")
+        isSelected = true
+        toolTipText = "Don't export key value pairs with empty values. This is for each language individually"
     }
 
     private val comboFolderNaming: JComboBox<String> = createOutputFolderComboBox().also { comboBox ->
@@ -90,38 +107,38 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
     }
 
     private val horSplit = JSplitPane().apply {
-        setOrientation(JSplitPane.HORIZONTAL_SPLIT)
-        setEnabled(false)
-        setDividerSize(0)
+        orientation = JSplitPane.HORIZONTAL_SPLIT
+        isEnabled = false
+        dividerSize = 0
         leftComponent = JSplitPane().apply {
-            setOrientation(JSplitPane.VERTICAL_SPLIT);
-            setEnabled(false);
-            setDividerSize(0);
+            orientation = JSplitPane.VERTICAL_SPLIT
+            isEnabled = false
+            dividerSize = 0
 
             bottomComponent = JPanel().apply {
-                setLayout(BorderLayout())
+                layout = BorderLayout()
 
                 val infoImportedFiles = JLabel("Imported file(s):").also {
-                    it.setBorder(CompoundBorder(it.border, EmptyBorder(4, 4, 4, 4)))
+                    it.border = CompoundBorder(it.border, EmptyBorder(4, 4, 4, 4))
                 }
                 add(infoImportedFiles, BorderLayout.NORTH)
 
                 add(JScrollPane(fileList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED), BorderLayout.CENTER)
 
                 val importPanel = JPanel(GridLayout(2, 1, 4, 4)).apply {
-                    add(reloadButton);
-                    add(importButton);
+                    add(reloadButton)
+                    add(importButton)
                 }
-                add(importPanel, BorderLayout.SOUTH);
+                add(importPanel, BorderLayout.SOUTH)
             }
 
             topComponent = JPanel().apply {
-                setLayout(BorderLayout())
+                layout = BorderLayout()
                 add(returnButton, BorderLayout.NORTH)
 
                 val infoPanel = JPanel().also {
-                    it.setLayout(GridLayout(12, 1, 8, 0))
-                    it.setBorder(CompoundBorder(it.border, EmptyBorder(4, 4, 4, 4)))
+                    it.layout = GridLayout(12, 1, 8, 0)
+                    it.border = CompoundBorder(it.border, EmptyBorder(4, 4, 4, 4))
 
                     it.add(JLabel("View settings:"))
                     it.add(checkBoxAutoResize)
@@ -134,7 +151,7 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
                     it.add(checkDoNotExportEmptyCells)
 
                     val outputFolderRuleLabel = JLabel("Output folder (struct):").apply {
-                        setForeground(Color(128, 128, 128))
+                        foreground = Color(128, 128, 128)
                     }
                     it.add(outputFolderRuleLabel)
 
@@ -153,13 +170,13 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
 
     init {
         owner.setStatus("Welcome to Excelibur..", App.NORMAL_MESSAGE)
-        setLayout(BorderLayout())
+        layout = BorderLayout()
 
-        add(horSplit, BorderLayout.CENTER);
+        add(horSplit, BorderLayout.CENTER)
 
         val split = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
-            setEnabled(false);
-            setDividerSize(0);
+            isEnabled = false
+            dividerSize = 0
 
             val flow = FlowLayout(FlowLayout.RIGHT).apply {
                 hgap = 0
@@ -167,11 +184,11 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
             }
 
             leftComponent = JPanel(flow).apply {
-                setAlignmentX(LEFT_ALIGNMENT)
+                alignmentX = LEFT_ALIGNMENT
             }
             rightComponent = JPanel(flow).apply {
                 add(exportButton)
-                setAlignmentX(RIGHT_ALIGNMENT)
+                alignmentX = RIGHT_ALIGNMENT
             }
 
         }
@@ -206,7 +223,7 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
             override fun createDefaultTableHeader(): JTableHeader {
                 return GroupableTableHeader(columnModel)
             }
-        };
+        }
 
         val cm = table.columnModel
         val header = table.tableHeader as GroupableTableHeader
@@ -221,18 +238,17 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
         }
 
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
-        table.tableHeader.setReorderingAllowed(false)
+        table.tableHeader.reorderingAllowed = false
         table.setDefaultRenderer(Object::class.java, ExceliburCellRenderer())
-        table.setFillsViewportHeight(true)
+        table.fillsViewportHeight = true
         horSplit.rightComponent = JScrollPane(table)
-        table.setRowSelectionAllowed(true)
+        table.rowSelectionAllowed = true
         updateTableAutoResizing()
     }
 
     private fun createOutputFolderComboBox(): JComboBox<String> {
         val list = Array(TranslationMgrFlags.FolderNaming.entries.size) {
-            val rule = TranslationMgrFlags.FolderNaming.entries[it];
-            when (rule) {
+            when (TranslationMgrFlags.FolderNaming.entries[it]) {
                 LOCALE_BRAND -> "locale_Brand"
                 BRAND_LOCALE -> "Brand_locale"
                 BRAND_AND_LOCALE_AS_SUBFOLDER -> "Brand / locale"
@@ -251,8 +267,8 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
         }
 
         JFileChooser(lastImportFolder).apply {
-            setMultiSelectionEnabled(true)
-            setFileFilter(filter)
+            isMultiSelectionEnabled = true
+            fileFilter = filter
             preferredSize = Dimension(800, 600)
 
             // This sets the default folder view to 'details'
@@ -260,12 +276,11 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
                 actionPerformed(null)
             }
 
-            val choice = showOpenDialog(this)
-            when (choice) {
+            when (showOpenDialog(this)) {
                 JFileChooser.APPROVE_OPTION -> {
                     if (selectedFiles.isNotEmpty()) {
                         translationMgr.files = selectedFiles
-                        lastImportFolder = selectedFiles[0].getParent()
+                        lastImportFolder = selectedFiles[0].parent
                         updateListView()
                         updateTableView()
                     }
@@ -291,7 +306,7 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
             lastExportFolder = "$userDir/Desktop"
         }
         val chooser = JFileChooser(lastExportFolder).apply {
-            setSelectedFile(File("translations"))
+            selectedFile = File("translations")
             preferredSize = Dimension(800, 600)
 
             // This sets the default folder view to 'details'
@@ -300,21 +315,21 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
             }
         }
         val choice = chooser.showSaveDialog(this)
-        translationMgr.startTimeTrace();
-        enableUserInput(false);
+        translationMgr.startTimeTrace()
+        enableUserInput(false)
         if (choice == JFileChooser.APPROVE_OPTION) {
             launch(Dispatchers.IO) {
                 val (outputFolder, fileName) = chooser.selectedFile.toString().let {
                     val i = it.lastIndexOf(System.getProperty("file.separator"))
                     it.substring(0, i) to it.substring(i + 1, it.length)
                 }
-                lastExportFolder = chooser.selectedFile.getParent()
+                lastExportFolder = chooser.selectedFile.parent
                 val success = exportData(outputFolder, fileName)
                 if (success) {
                     translationMgr.stopTimeTrace()
                     val seconds = translationMgr.statCalculationTime / 1000.0
                     val secondsString = String.format("%.2f", seconds)
-                    owner.setStatus("Sucessfully exported Excel sheet(s) within " + secondsString + "s...", App.NORMAL_MESSAGE)
+                    owner.setStatus("Successfully exported Excel sheet(s) within " + secondsString + "s...", App.NORMAL_MESSAGE)
                 }
                 enableUserInput(true)
             }
@@ -325,21 +340,21 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
     }
 
     private fun updateListView() {
-        fileList.setVisibleRowCount(-1)
+        fileList.visibleRowCount = -1
         fileList.selectionMode = ListSelectionModel.SINGLE_SELECTION
 
         val fileNames = Array(translationMgr.getNumSelectedFiles()) {
             val file = translationMgr.files?.get(it)
-            file?.let { translationMgr.getFileName(file.getName()) }
+            file?.let { translationMgr.getFileName(file.name) }
         }
         fileList.setListData(fileNames)
-        fileList.setSelectedIndex(0)
+        fileList.selectedIndex = 0
     }
 
     private fun updateTableView() {
         if (translationMgr.getNumSelectedFiles() == 0) return
 
-        translationMgr.startTimeTrace();
+        translationMgr.startTimeTrace()
         owner.setStatus("Extracting data...", App.NORMAL_MESSAGE)
 
         enableUserInput(false)
@@ -360,52 +375,52 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
             owner.setStatus("No data found inside Excel file(s). Did you set it up properly? Click 'Help' to read the documentation on how to setup an Excel file correctly.", App.ERROR_MESSAGE)
             val model = DefaultTableModel(arrayOf("Component", "Key", "Locale"), 0)
             table = JTable(model).apply {
-                setFillsViewportHeight(true)
+                fillsViewportHeight = true
             }
             updateTableAutoResizing()
-            return;
+            return
         }
 
         if (comp != null) horSplit.remove(comp)
 
-        createDualHeaderTable(languageTable);
+        createDualHeaderTable(languageTable)
 
         translationMgr.stopTimeTrace()
         val seconds = translationMgr.statCalculationTime / 1000.0
         val secondsString = String.format("%.2f", seconds)
         when (translationMgr.statNumEmptyCells) {
-            0 -> owner.setStatus("Sucessfully imported Excel sheet(s) within " + secondsString + "s...", App.NORMAL_MESSAGE)
+            0 -> owner.setStatus("Successfully imported Excel sheet(s) within " + secondsString + "s...", App.NORMAL_MESSAGE)
             1 -> owner.setStatus(
-                    "Sucessfully imported Excel sheet(s) within " + secondsString + "s but there was " + translationMgr.statNumEmptyCells + " empty cell found! Watch out for the red marked cells!",
+                    "Successfully imported Excel sheet(s) within " + secondsString + "s but there was " + translationMgr.statNumEmptyCells + " empty cell found! Watch out for the red marked cells!",
                     App.WARNING_MESSAGE
             )
 
             else -> owner.setStatus(
-                    "Sucessfully imported Excel sheet(s) within  " + secondsString + "s but there were " + translationMgr.statNumEmptyCells + " empty cells found! Watch out for the red marked cells!",
+                    "Successfully imported Excel sheet(s) within  " + secondsString + "s but there were " + translationMgr.statNumEmptyCells + " empty cells found! Watch out for the red marked cells!",
                     App.WARNING_MESSAGE
             )
         }
     }
 
     private fun enableUserInput(bEnabled: Boolean) {
-        val bAnyFilesImported = translationMgr.getNumSelectedFiles() > 0 && table.getRowCount() > 0
+        val bAnyFilesImported = translationMgr.getNumSelectedFiles() > 0 && table.rowCount > 0
         // prevent export if no files are in the "imported" list
-        exportButton.setEnabled(bEnabled && bAnyFilesImported)
-        reloadButton.setEnabled(bEnabled && bAnyFilesImported)
-        importButton.setEnabled(bEnabled)
-        returnButton.setEnabled(bEnabled)
-        checkBoxAutoResize.setEnabled(bEnabled)
-        checkBoxMergeCompAndKey.setEnabled(bEnabled)
-        checkDoNotExportEmptyCells.setEnabled(bEnabled)
-        checkBoxUseHyperlinkIfAvailable.setEnabled(bEnabled)
-        comboFolderNaming.setEnabled(bEnabled)
+        exportButton.isEnabled = bEnabled && bAnyFilesImported
+        reloadButton.isEnabled = bEnabled && bAnyFilesImported
+        importButton.isEnabled = bEnabled
+        returnButton.isEnabled = bEnabled
+        checkBoxAutoResize.isEnabled = bEnabled
+        checkBoxMergeCompAndKey.isEnabled = bEnabled
+        checkDoNotExportEmptyCells.isEnabled = bEnabled
+        checkBoxUseHyperlinkIfAvailable.isEnabled = bEnabled
+        comboFolderNaming.isEnabled = bEnabled
     }
 
     private suspend fun exportData(outputFolder: String, fileName: String): Boolean {
         translationMgr.setFlag(TranslationMgrFlags.Export.CONCAT_COMPONENT_AND_KEY, checkBoxMergeCompAndKey.isSelected)
         translationMgr.setFlag(TranslationMgrFlags.Export.DONT_EXPORT_EMPTY_VALUES, checkDoNotExportEmptyCells.isSelected)
 
-        translationMgr.folderNamingType = TranslationMgrFlags.FolderNaming.getValue(comboFolderNaming.getSelectedIndex())
+        translationMgr.folderNamingType = TranslationMgrFlags.FolderNaming.getValue(comboFolderNaming.selectedIndex)
         return translationMgr.export2Json(outputFolder, fileName)
     }
 
@@ -414,7 +429,7 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
             for (column in 0..<table.columnCount) {
                 val tableColumn = table.columnModel.getColumn(column)
                 val preferredWidth = 3000 // tableColumn.minWidth
-                tableColumn.setPreferredWidth(preferredWidth)
+                tableColumn.preferredWidth = preferredWidth
             }
             table.autoResizeMode = JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
         } else {
@@ -424,7 +439,7 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
                 var preferredWidth = tableColumn.minWidth
                 val maxWidth = tableColumn.maxWidth.coerceAtMost(2000)
 
-                for (row in 0..<table.getRowCount()) {
+                for (row in 0..<table.rowCount) {
                     val cellRenderer = table.getCellRenderer(row, column)
                     val c = table.prepareRenderer(cellRenderer, row, column)
                     val width = c.preferredSize.width + table.intercellSpacing.width
@@ -432,12 +447,12 @@ class Excelibur(private val owner: App) : JPanel(), CoroutineScope {
 
                     // We've exceeded the maximum width, no need to check other rows
                     if (preferredWidth >= maxWidth) {
-                        preferredWidth = maxWidth;
-                        break;
+                        preferredWidth = maxWidth
+                        break
                     }
                 }
 
-                tableColumn.setPreferredWidth(preferredWidth)
+                tableColumn.preferredWidth = preferredWidth
             }
         }
     }

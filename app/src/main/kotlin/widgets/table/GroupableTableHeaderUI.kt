@@ -42,7 +42,7 @@ class GroupableTableHeaderUI : BasicTableHeaderUI() {
                 cellRect.height = size.height - groupHeight
                 cellRect.y = groupHeight
             }
-            cellRect.width = aColumn.width;
+            cellRect.width = aColumn.width
             if (cellRect.intersects(clipBounds)) {
                 paintCell(g, cellRect, column)
             }
@@ -65,7 +65,7 @@ class GroupableTableHeaderUI : BasicTableHeaderUI() {
         val renderer = cGroup.headerRenderer ?: getHeader().defaultRenderer
 
         val component = renderer.getTableCellRendererComponent(header.table, cGroup.headerValue, false, false, -1, -1)
-        rendererPane.paintComponent(g, component, header, cellRect.x, cellRect.y, cellRect.width, cellRect.height, true);
+        rendererPane.paintComponent(g, component, header, cellRect.x, cellRect.y, cellRect.width, cellRect.height, true)
     }
 
     private fun getHeaderHeight(): Int {
@@ -87,7 +87,7 @@ class GroupableTableHeaderUI : BasicTableHeaderUI() {
     }
 
     override fun getPreferredSize(c: JComponent): Dimension {
-        var width = 0;
+        var width = 0
         val enumeration = header.columnModel.columns
         while (enumeration.hasMoreElements()) {
             val aColumn = enumeration.nextElement()

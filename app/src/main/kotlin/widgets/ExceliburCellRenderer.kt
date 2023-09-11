@@ -17,17 +17,17 @@ class ExceliburCellRenderer : TableCellRenderer {
 
         when {
             obj.isNullOrBlank() -> {
-                c.setBackground(if (isSelected) Color(255, 192, 192) else Color(255, 110, 110))
+                c.background = if (isSelected) Color(255, 192, 192) else Color(255, 110, 110)
             }
 
             column < 2 -> {
-                c.setBackground(if (isSelected) Color(57, 135, 213) else Color(255, 255, 255, 32))
-                c.setForeground(if (isSelected) Color(255, 255, 255) else Color(187, 187, 187, 128))
+                c.background = if (isSelected) Color(57, 135, 213) else Color(255, 255, 255, 32)
+                c.foreground = if (isSelected) Color(255, 255, 255) else Color(187, 187, 187, 128)
             }
 
             else -> {
-                c.setBackground(if (isSelected) Color(57, 135, 213) else Color(0, 0, 0, 0))
-                c.setForeground(if (isSelected) Color(255, 255, 255) else Color(187, 187, 187))
+                c.background = if (isSelected) Color(57, 135, 213) else Color(0, 0, 0, 0)
+                c.foreground = if (isSelected) Color(255, 255, 255) else Color(187, 187, 187)
             }
         }
 

@@ -1,14 +1,11 @@
 package widgets
 
+import core.App
 import java.awt.Dimension
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.Insets
-
-import javax.swing.JButton
 import javax.swing.JPanel
-
-import core.App
 
 class MainMenu(owner: App) : JPanel() {
     companion object {
@@ -17,7 +14,7 @@ class MainMenu(owner: App) : JPanel() {
 
     init {
         val grid = GridBagLayout()
-        setLayout(grid)
+        layout = grid
         val con = GridBagConstraints().apply {
             gridx = 0
             gridy = 0
@@ -27,8 +24,8 @@ class MainMenu(owner: App) : JPanel() {
             addActionListener { owner.addScreen(Excelibur(owner), "Excelibur") }
             preferredSize = Dimension(200, 50)
         }
-        add(button, con);
-        con.gridy = 1;
+        add(button, con)
+        con.gridy = 1
         val helpButton = App.createButtonWithTextAndIcon("Documentation", "icon_help.png").apply {
 
             addActionListener { owner.showDocumentation() }

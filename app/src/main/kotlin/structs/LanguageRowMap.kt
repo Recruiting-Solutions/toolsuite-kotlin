@@ -47,7 +47,7 @@ class LanguageRowMap {
     }
 
     private fun exchange(a: Int, b: Int) {
-        val row = rowMap[a];
+        val row = rowMap[a]
         rowMap[a] = rowMap[b]
         rowMap[b] = row
     }

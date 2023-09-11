@@ -16,9 +16,9 @@ object TranslationMgrFlags {
             fun getValue(i: Int): FolderNaming {
                 for ((index, rule) in entries.withIndex()) {
                     if (i == index)
-                        return rule;
+                        return rule
                 }
-                return LOCALE_BRAND;
+                return LOCALE_BRAND
             }
         }
     }

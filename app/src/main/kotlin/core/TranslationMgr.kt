@@ -1,30 +1,30 @@
 package core
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
+import org.apache.poi.ss.usermodel.CellType.BOOLEAN
+import org.apache.poi.ss.usermodel.CellType.NUMERIC
+import org.apache.poi.ss.usermodel.CellType.STRING
+import org.apache.poi.ss.usermodel.Row
+import org.apache.poi.ss.usermodel.Row.MissingCellPolicy
+import org.apache.poi.ss.usermodel.Sheet
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import structs.Language
+import structs.LanguageIdentifier
+import structs.LanguageRowMap
+import structs.LanguageTable
 import java.io.File
 import java.io.FileInputStream
-import java.io.Writer
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.OutputStreamWriter
-
-import org.apache.poi.ss.usermodel.*
-import org.apache.poi.ss.usermodel.CellType.*
-import org.apache.poi.ss.usermodel.Row.MissingCellPolicy
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
-
-import structs.Language
-import structs.LanguageIdentifier
-import structs.LanguageTable
-import structs.LanguageRowMap
-import java.lang.Exception
-import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashSet
 
 // Grid size in which this tool searches for all necessary data to extract the
 // rest of a single sheet.
@@ -51,7 +51,7 @@ private const val COMPONENT = "component"
 private const val KEY = "key"
 
 class TranslationMgr {
-    private var languageTable: LanguageTable? = null;
+    private var languageTable: LanguageTable? = null
 
     // These are variables for stat tracking.
     var statNumEmptyCells = 0

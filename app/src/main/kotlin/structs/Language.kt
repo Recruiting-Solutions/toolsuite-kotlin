@@ -2,9 +2,9 @@ package structs
 
 class Language(val identifier: LanguageIdentifier) {
 
-    private val _tree: MutableMap<String, MutableMap<String, String>> = mutableMapOf();
+    private val _tree: MutableMap<String, MutableMap<String, String>> = mutableMapOf()
     val tree: Map<String, Map<String, String>>
-        get() = _tree;
+        get() = _tree
 
     fun isSameLanguageIdentifier(otherLanguage: Language): Boolean {
         return identifier.brand.equals(otherLanguage.identifier.brand, ignoreCase = true)
@@ -19,8 +19,7 @@ class Language(val identifier: LanguageIdentifier) {
 
     fun findValue(component: String, key: String): String {
         val componentMap = tree[component] ?: return ""
-        val value = componentMap[key] ?: return ""
-        return value
+        return componentMap[key] ?: return ""
     }
 
     fun appendTable(other: Language) {

@@ -23,7 +23,7 @@ class ColumnGroup(val headerValue: String?, var headerRenderer: TableCellRendere
     }
 
     fun add(group: ColumnGroup) {
-        groups.add(group);
+        groups.add(group)
     }
 
     fun getColumnGroups(column: TableColumn): List<ColumnGroup> {
@@ -36,21 +36,21 @@ class ColumnGroup(val headerValue: String?, var headerRenderer: TableCellRendere
             return result
         }
         for (columnGroup in groups) {
-            result.addAll(columnGroup.getColumnGroups(column));
+            result.addAll(columnGroup.getColumnGroups(column))
         }
         return result
     }
 
     private fun contains(column: TableColumn): Boolean {
         if (columns.contains(column)) {
-            return true;
+            return true
         }
         for (group in groups) {
             if (group.contains(column)) {
                 return true
             }
         }
-        return false;
+        return false
     }
 
     fun getSize(table: JTable): Dimension {
