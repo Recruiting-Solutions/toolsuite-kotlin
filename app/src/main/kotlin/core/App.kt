@@ -35,7 +35,7 @@ class App : JFrame() {
 
     companion object {
 
-        const val TOOL_NAME = "Toolsuite 1.0.4"
+        const val TOOL_NAME = "Toolsuite 1.0.6"
         const val NORMAL_MESSAGE = 0
         const val WARNING_MESSAGE = 1
         const val ERROR_MESSAGE = 2

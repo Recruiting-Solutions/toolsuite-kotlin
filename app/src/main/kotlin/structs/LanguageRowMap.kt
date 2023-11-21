@@ -1,11 +1,22 @@
 package structs
 
-class LanguageRowMap {
+class LanguageRowMap(languages: List<Language>) {
 
     var rowMap: Array<Array<String>> = emptyArray()
     private val tree: MutableMap<String, MutableSet<String>> = mutableMapOf()
 
-    fun buildRowMap() {
+    init {
+        for (lang in languages) {
+            for (component in lang.tree.entries) {
+                for (key in component.value.keys) {
+                    addUnique(component.key, key)
+                }
+            }
+        }
+        buildRowMap()
+    }
+
+    private fun buildRowMap() {
         val flat = tree.entries.flatMap { component -> component.value.map { key -> arrayOf(component.key, key) } }
         rowMap = flat.toTypedArray()
         quickSort(0, rowMap.size - 1)

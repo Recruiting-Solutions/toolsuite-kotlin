@@ -2,12 +2,10 @@ package core
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import org.apache.poi.ss.usermodel.CellType.BOOLEAN
-import org.apache.poi.ss.usermodel.CellType.NUMERIC
-import org.apache.poi.ss.usermodel.CellType.STRING
+import org.apache.poi.ss.usermodel.CellType
+import org.apache.poi.ss.usermodel.CellType.*
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy
 import org.apache.poi.ss.usermodel.Sheet
@@ -18,13 +16,7 @@ import structs.LanguageRowMap
 import structs.LanguageTable
 import java.io.File
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.IOException
-import java.io.OutputStreamWriter
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 
 // Grid size in which this tool searches for all necessary data to extract the
 // rest of a single sheet.
@@ -94,6 +86,7 @@ class TranslationMgr {
         private suspend fun getSheetsFromExcel(sheets: MutableSet<Sheet>, file: File?) = withContext(Dispatchers.IO) {
             if (file == null) return@withContext
             try {
+                // don't know why but FIS proved to be 2-3 times faster than directly using file or OPC package.
                 val fis = FileInputStream(file)
                 XSSFWorkbook(fis).use { workbook ->
                     val numSheets = workbook.numberOfSheets
@@ -115,7 +108,7 @@ class TranslationMgr {
         if (getFlag(TranslationMgrFlags.Import.USE_HYPERLINK_IF_AVAILABLE)) {
             cell.hyperlink?.let { return it.address }
         }
-        return when (cell.cellType) {
+        return when (cell.cellType.takeIf { it != CellType.FORMULA } ?: cell.cachedFormulaResultType) {
             BOOLEAN -> fixString(cell.booleanCellValue.toString())
             STRING -> fixString(cell.stringCellValue)
             NUMERIC -> cell.numericCellValue.toInt().toString()
@@ -126,7 +119,8 @@ class TranslationMgr {
     private fun fixString(str: String): String {
         return str
                 .replace("\n", " ")
-                .replace("\r", " ").replace(System.getProperty("line.separator"), " ")
+                .replace("\r", " ")
+                .replace(System.lineSeparator(), " ")
                 // Replace double spacebar
                 .replace("\"", "\\\"")
                 .replace(Regex("( )+"), " ")
@@ -141,135 +135,11 @@ class TranslationMgr {
     }
 
     suspend fun export2Json(outputFolder: String, fileName: String): Boolean {
-        // we have only one line off error message, thus we just have to return wether
-        // there was an error, the error is already printed and shouldnt be overriden by
-        // the success message if succeeding exports were successfull.
+
+        val json = JsonCreator()
         val bMergeComponentAndKey = getFlag(TranslationMgrFlags.Export.CONCAT_COMPONENT_AND_KEY)
         val bSkipEmptyCells = getFlag(TranslationMgrFlags.Export.DONT_EXPORT_EMPTY_VALUES)
-        val allSucceeded = coroutineScope {
-            val jobs = languageTable?.identifiers?.map { identifier ->
-                async {
-                    if (bMergeComponentAndKey) {
-                        if (!exportSimple(outputFolder, fileName, identifier, bSkipEmptyCells)) {
-                            return@async false
-                        }
-                    } else {
-                        if (!exportAdvanced(outputFolder, fileName, identifier, bSkipEmptyCells)) {
-                            return@async false
-                        }
-                    }
-                    return@async true
-                }
-            }
-            jobs?.awaitAll()?.contains(false)?.not() ?: true
-        }
-        return allSucceeded
-    }
-
-    private suspend fun exportAdvanced(outputFolder: String, fileName: String, identifier: LanguageIdentifier, skipEmptyCells: Boolean): Boolean = withContext(Dispatchers.IO) {
-        val data = languageTable?.jTableData ?: return@withContext false
-        var langIndex = languageTable?.getIdentifierIndex(identifier)?.takeIf { it != -1 } ?: return@withContext false
-        // skip component and key columns
-        langIndex += 2
-        try {
-            val pathToCreate = createOutputFolder(outputFolder, identifier) ?: return@withContext false
-            // We need this filewriter to allow Umlauts
-            OutputStreamWriter(FileOutputStream("$pathToCreate$fileName.json"), StandardCharsets.UTF_8).use { writer ->
-                var lastComponent = ""
-                var isFirstComp = true
-                writer.write("{\n")
-                for (row in data) {
-                    val value = row[langIndex]
-                    if (skipEmptyCells && (value.isNullOrBlank())) continue
-                    var isFirstKeyValue = false
-                    if (row[0] != lastComponent) {
-                        // New component
-                        if (isFirstComp) {
-                            writer.write("\t\"" + row[0] + "\": {\n")
-                            isFirstKeyValue = true
-                            isFirstComp = false
-                        } else {
-                            writer.write("\n\t},\n\t\"" + row[0] + "\": {\n")
-                        }
-                        writer.write("\t\t\"" + row[1] + "\": " + "\"" + value + "\"")
-                        lastComponent = row[0] ?: ""
-                    } else {
-                        if (isFirstKeyValue) {
-                            writer.write("\t\t\"" + row[1] + "\": " + "\"" + value + "\"")
-                        } else {
-                            writer.write(",\n\t\t\"" + row[1] + "\": " + "\"" + value + "\"")
-                        }
-                    }
-                }
-                writer.write("\n\t}\n}")
-            }
-        } catch (e: IOException) {
-            withContext(Dispatchers.Main) { App.get().setStatus(e.localizedMessage, App.ERROR_MESSAGE) }
-            return@withContext false
-        }
-        return@withContext true
-    }
-
-    private suspend fun exportSimple(outputFolder: String, fileName: String, identifier: LanguageIdentifier, skipEmptyCells: Boolean): Boolean = withContext(Dispatchers.IO) {
-        val data = languageTable?.jTableData ?: return@withContext false
-        var langIndex = languageTable?.getIdentifierIndex(identifier)?.takeIf { it != -1 } ?: return@withContext false
-        // skip component and key columns
-        langIndex += 2
-        try {
-            val pathToCreate = createOutputFolder(outputFolder, identifier) ?: return@withContext false
-            // We need this filewriter to allow Umlauts
-            OutputStreamWriter(FileOutputStream("$pathToCreate$fileName.json"), StandardCharsets.UTF_8).use { writer ->
-                writer.write("{")
-                var isFirstItem = false
-                for (row in data) {
-                    val value = row[langIndex]
-                    if (value.isNullOrBlank()) continue
-                    if (!isFirstItem) {
-                        writer.write("\n\t\"" + row[0] + "_" + row[1] + "\": " + "\"" + value + "\"")
-                        isFirstItem = true
-                    } else {
-                        writer.write(",\n\t\"" + row[0] + "_" + row[1] + "\": " + "\"" + value + "\"")
-                    }
-                }
-                writer.write("\n}")
-            }
-        } catch (e: IOException) {
-            withContext(Dispatchers.Main) { App.get().setStatus(e.localizedMessage, App.ERROR_MESSAGE) }
-            return@withContext false
-        }
-        return@withContext true
-    }
-
-    private suspend fun createOutputFolder(outputFolder: String, identifier: LanguageIdentifier): String? {
-        val fileSep = System.getProperty("file.separator")
-        val path = outputFolder + fileSep +
-                when (folderNamingType) {
-                    TranslationMgrFlags.FolderNaming.BRAND_AND_LOCALE_AS_SUBFOLDER -> identifier.brand + fileSep + identifier.locale + fileSep
-                    TranslationMgrFlags.FolderNaming.BRAND_LOCALE -> identifier.brand + "_" + identifier.locale + fileSep
-                    TranslationMgrFlags.FolderNaming.LOCALE_BRAND -> identifier.locale + "_" + identifier.brand + fileSep
-                    else -> ""
-                }
-        if (!createFolder(path)) return null
-
-        return path
-    }
-
-    private suspend fun createFolder(path: String): Boolean {
-        val pathObj = Paths.get(path)
-        return createFolder(pathObj)
-    }
-
-    private suspend fun createFolder(path: Path): Boolean = withContext(Dispatchers.IO) {
-        if (Files.exists(path)) return@withContext true
-        try {
-            // Create directory doesnt with with sub directories when the parent older is
-            // not created yet
-            Files.createDirectories(path)
-            return@withContext true
-        } catch (e: IOException) {
-            App.get().setStatus(e.localizedMessage, App.ERROR_MESSAGE)
-            return@withContext false
-        }
+        return json.export2Json(languageTable, outputFolder, fileName, bMergeComponentAndKey, bSkipEmptyCells, folderNamingType)
     }
 
     private fun isLocale(value: String): Boolean {
@@ -344,7 +214,7 @@ class TranslationMgr {
     }
 
     /**
-     * Searches in a clamped area of r= 20 to c = 40 and returns the index of the first occurence of the specified string.
+     * Searches in a clamped area of r= MAX_SEARCH_ROW to c = MAX_SEARCH_COLUMN and returns the index of the first occurence of the specified string.
      */
     private fun findColumnWithString(sheet: Sheet?, string: String): Int {
         if (sheet == null) return -1
@@ -393,26 +263,25 @@ class TranslationMgr {
         }
     }
 
-    private fun buildRowMap(languages: List<Language>): LanguageRowMap {
-        val rowMap = LanguageRowMap()
-        for (lang in languages) {
-            for (component in lang.tree.entries) {
-                for (key in component.value.keys) {
-                    rowMap.addUnique(component.key, key)
-                }
-            }
-        }
-        rowMap.buildRowMap()
-        return rowMap
-    }
-
     suspend fun importExcelFiles(): LanguageTable? {
         if (files == null) return null
         statNumEmptyCells = 0
         val sheets = mutableSetOf<Sheet>()
-        files?.forEach { file ->
-            getSheetsFromExcel(sheets, file)
+
+        val statRead = System.currentTimeMillis()
+
+        coroutineScope {
+            val jobs = files?.map { file ->
+                async { getSheetsFromExcel(sheets, file) }
+            }
+
+            jobs?.forEach { it.await() }
         }
+
+        println("Loading excel files took: ${System.currentTimeMillis() - statRead}ms")
+
+        val statExtract = System.currentTimeMillis()
+
         val sumLanguages = mutableListOf<Language>()
         for (sheet in sheets) {
             val languages = extractSheet(sheet) ?: continue
@@ -425,9 +294,13 @@ class TranslationMgr {
             }
         }
 
+        println("Extracting excel files took: ${System.currentTimeMillis() - statExtract}ms")
+
         if (sumLanguages.isEmpty()) return null
 
-        val rowMap = buildRowMap(sumLanguages)
+        val statSort = System.currentTimeMillis()
+
+        val rowMap = LanguageRowMap(sumLanguages)
         val numLangs = sumLanguages.size
         val data = Array(rowMap.rowMap.size) { index ->
             arrayOfNulls<String>(numLangs + 2).also {
@@ -440,7 +313,7 @@ class TranslationMgr {
             lang.identifier
         }
 
-        sortColumns(header, sumLanguages)
+        LanguageIdentifier.sortHeader(header, sumLanguages)
 
         for (c in 0..<numLangs) {
             val lang = sumLanguages[c]
@@ -451,6 +324,8 @@ class TranslationMgr {
             }
         }
         languageTable = LanguageTable(header, data)
+
+        println("Sorting data took: ${System.currentTimeMillis() - statSort}ms")
 
         return languageTable
     }
@@ -463,50 +338,5 @@ class TranslationMgr {
         statCalculationTime = System.currentTimeMillis() - statCalculationTime
     }
 
-    private fun sortColumns(identifiers: Array<LanguageIdentifier>, languages: MutableList<Language>) {
-        sort(0, identifiers.size - 1, identifiers, languages)
-    }
 
-    private fun sort(l: Int, r: Int, identifiers: Array<LanguageIdentifier>, languages: MutableList<Language>) {
-        if (l < r) {
-            val q = (l + r) / 2
-
-            sort(l, q, identifiers, languages)
-            sort(q + 1, r, identifiers, languages)
-            mergeSort(l, q, r, identifiers, languages)
-        }
-    }
-
-    private fun mergeSort(l: Int, q: Int, r: Int, identifiers: Array<LanguageIdentifier>, languages: MutableList<Language>) {
-        val identifierCopy = arrayOfNulls<LanguageIdentifier>(identifiers.size)
-        val dataCopy = arrayOfNulls<Language>(languages.size)
-        for (i in l..q) {
-            identifierCopy[i] = identifiers[i]
-            dataCopy[i] = languages[i]
-        }
-        for (j in (q + 1)..r) {
-            val o = r + q + 1 - j
-            identifierCopy[o] = identifiers[j]
-            dataCopy[o] = languages[j]
-        }
-        var i = l
-        var j = r
-        for (k in l..r) {
-            val one = identifierCopy[i]!!
-            val two = identifierCopy[j]!!
-            val bPreceedingBrand = one.brand < two.brand
-            val bSameBrand = one.brand == two.brand
-            val bPreceedingLocale = one.locale < two.locale
-
-            if (bPreceedingBrand || (bSameBrand && bPreceedingLocale)) {
-                identifiers[k] = one
-                languages[k] = dataCopy[i]!!
-                i++
-            } else {
-                identifiers[k] = identifierCopy[j]!!
-                languages[k] = dataCopy[j]!!
-                j--
-            }
-        }
-    }
 }
